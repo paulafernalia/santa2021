@@ -282,3 +282,6 @@ TSWLatexianTemp*
 *.lp
 gurobi_c++.h
 gurobi_c.h
+
+# C++ files
+*_exe
