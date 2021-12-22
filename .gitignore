@@ -277,3 +277,6 @@ TSWLatexianTemp*
 
 # Sublime files
 *.sublime*
+
+# Gurobi files
+*.lp
