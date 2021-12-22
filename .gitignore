@@ -280,3 +280,5 @@ TSWLatexianTemp*
 
 # Gurobi files
 *.lp
+gurobi_c++.h
+gurobi_c.h
