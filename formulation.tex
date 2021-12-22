@@ -39,7 +39,7 @@ Parameters:
     $\quad |P|$ & \ \ \ Number of permutations of $|M|$ movies. $|P| = |M|! = 7! = 5,040$. \\[1ex]
     $\quad |P_{\text{all}}|$ & \ \ \ Number of permutations starting with $AB$. $|P_{\text{all}}| = |M - 2|! = 5! = 120$. \\[1ex]
     $\quad T_{max}$ & \ \ \ Upper bound on the length of the longest schedule. \\[1ex]
-    & \quad $T_{max} = \dfrac{2}{|G|} (|M| - 1)! (|M| - 1) + 1 + \dfrac{|G| - 1}{|G|} (|M| - 2)! = 2,880$. \\[2ex]
+    & \quad $T_{max} = \dfrac{1}{|G|} (|M| - 1)! (2|M| - 1)  + \dfrac{2}{|G|} (|M| - 2)! |M| = 3,680$. \\[2ex]
     $\quad \omega_{pk}$ & \ \ \ Movie in position $k \in 1 \hdots |M|$ of permutation $p \in P$.
 \end{tabularx}
 \end{minipage}
