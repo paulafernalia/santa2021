@@ -285,3 +285,6 @@ gurobi_c.h
 
 # C++ files
 *_exe
+
+# OS files
+.DS_Store
