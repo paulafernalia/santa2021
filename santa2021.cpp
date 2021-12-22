@@ -8,7 +8,7 @@ main(int argc,
     char **argv) {
 
     // Set of movies (#0 is no movie and #1 is the wildcard)
-    int nMovies = 4;
+    int nMovies = 3;
     int nTeams = 3;
     int nWildcards = 2;
 
@@ -67,8 +67,6 @@ main(int argc,
 
     // 6) Find each permutation anywhere
     add_constr_permu(nTeams, permus, &gamma, &model);
-
-
 
 
     // Solve problem
@@ -174,17 +172,21 @@ add_constr_max_wildcards(
     GRBVar3D* px,
     GRBModel* pmodel) {
 
-    GRBLinExpr num_wildcards = 0;
-
     // Add wildcard variable to LHS
     for (int g = 0; g < nTeams; g++) {
-        for (int t = 0; t < nPos; t++) {
-            num_wildcards += 1 * px->at(g)[t][1];
-        }
-    }
+        // Create constraint name
+        ostringstream cname;
+        cname << "maxwildcards(g" << g << ")";
 
-    // Add constraint to model
-    pmodel->addConstr(num_wildcards <= nWildcards, "maxwildcards");
+        // Initialise num of wildcards found in team
+        GRBLinExpr num_wildcards = 0;
+
+        for (int t = 0; t < nPos; t++)
+            num_wildcards += px->at(g)[t][1];
+
+        // Add constraint to model
+        pmodel->addConstr(num_wildcards <= nWildcards, cname.str());
+    }
 }
 
 
@@ -347,7 +349,7 @@ add_constr_permu(
             cname << "regular_permutation(p" << p << ")";
 
             // Add constraint
-            pmodel->addConstr(expr >= 1, cname.str());
+            pmodel->addConstr(expr == 1, cname.str());
         }
     }
 }
@@ -481,7 +483,7 @@ add_vars_last_movie(
     GRBVar* pduration,
     GRBModel* pmodel) {
 
-    *pduration = pmodel->addVar(0, nPos, 1, GRB_CONTINUOUS, "l");
+    *pduration = pmodel->addVar(0, nPos + 1, 1, GRB_CONTINUOUS, "l");
 }
 
 
