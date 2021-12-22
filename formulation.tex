@@ -1,0 +1,179 @@
+\documentclass{article}
+
+\usepackage{tabularx}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage{longtable}
+\usepackage[left=2cm, right=2cm, top=2.4cm, bottom=2.4cm]{geometry}
+
+\title{\textbf{\Large{Formulation for The Merry Movie Montage} }}
+\author{\normalfont{Paula Ferm\'in Cueto}}
+\date{\small{December 2021}}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{minipage}{\textwidth}
+Sets:
+\vspace{1ex}
+
+\begin{tabularx}{\linewidth}{p{1 cm} X}
+    $\quad A$ & \ \ \ Set of activities (either a movie, a wildcard or no movie). $A = \{\emptyset, *, A, B, C, D, E, F, G\}$ \\[1ex]
+    $\quad M$ & \ \ \ Set of movies. $M = \{ A, B, C, D, E, F, G\}$ \\[1ex]
+    $\quad T$ & \ \ \ Set of time periods. $T = 1 \hdots T_{max}$. \\[1ex]
+    $\quad G$ & \ \ \ Set of groups of elves wathing movies. $G = \{1, 2, 3\}.$ \\[1ex]
+    $\quad P$ & \ \ \ Set of movie permutations. \\[1ex]
+    $\quad P_{\text{all}}$ & \ \ \ Set of movie permutations that must be watched by all teams.
+\end{tabularx}
+\end{minipage}
+\vspace{2em}
+
+
+\begin{minipage}{\textwidth}
+Parameters:
+\vspace{1ex}
+
+\begin{tabularx}{\linewidth}{p{1 cm} X}
+    $\quad |P|$ & \ \ \ Number of permutations of $|M|$ movies. $|P| = |M|! = 7! = 5,040$. \\[1ex]
+    $\quad |P_{\text{all}}|$ & \ \ \ Number of permutations starting with $AB$. $|P_{\text{all}}| = |M - 2|! = 5! = 120$. \\[1ex]
+    $\quad T_{max}$ & \ \ \ Upper bound on the length of the longest schedule. \\[1ex]
+    & \quad $T_{max} = \dfrac{2}{|G|} (|M| - 1)! (|M| - 1) + 1 + \dfrac{|G| - 1}{|G|} (|M| - 2)! = 2,880$. \\[2ex]
+    $\quad \omega_{pk}$ & \ \ \ Movie in position $k \in 1 \hdots |M|$ of permutation $p \in P$.
+\end{tabularx}
+\end{minipage}
+\vspace{2em}
+
+
+\begin{minipage}{\textwidth}
+Decision variables:
+\vspace{1ex}
+
+\begin{tabularx}{\linewidth}{p{1 cm} X}
+    \quad $x_{gta}$ & $= \ \left \{ \begin{matrix*}[l]
+        1 & \quad \text{if group $g \in G$ performs activity $a \in A$ at time $t \in T$.} \\
+        0 & \quad \text{otherwise.} \\
+    \end{matrix*} \right .$ \\ [3ex]
+
+    \quad $\delta_{pgt}$ & $= \ \left \{ \begin{matrix*}[l]
+        1 & \quad \text{if permutation $p \in P$ is found in group $g \in G$ starting at time $t \in T$.} \\
+        0 & \quad \text{otherwise.} \\
+    \end{matrix*} \right .$ \\ [3ex]
+
+    \quad $\gamma_{pg}$ & $= \ \left \{ \begin{matrix*}[l]
+        1 & \quad \text{if permutation $p \in P$ is found in group $g \in G$.} \\
+        0 & \quad \text{otherwise.} \\
+    \end{matrix*} \right .$ \\ [3ex]
+
+    \quad $\lambda_{pgt}$ & $= \ \left \{ \begin{matrix*}[l]
+        1 & \quad \text{if $\delta_{pgt}$ is the only permutation $p \in P$ counted in team $g \in G$.} \\
+        0 & \quad \text{otherwise.} \\
+    \end{matrix*} \right .$ \\ [3ex]
+
+    \quad $\ell$ & Duration of the longest schedule of the three teams.
+\end{tabularx}
+\end{minipage}
+
+
+\begin{center}
+    \begin{longtable}{m{2cm} m{2cm} m{12cm}}
+        & $\min\limits_{x, \delta, \gamma, \ell}$ & 
+            {\begin{flalign}
+               \ell && \label{eq:objfun}
+            \end{flalign}}\\[-8ex]
+        & s.t. & 
+            {\begin{flalign}
+                \ell \geq \sum_{\substack{t \in T,\\a \in A \backslash \{\emptyset\}}} x_{gta} \qquad \forall \ g \in G.
+                && \label{eq:durationdef} 
+            \end{flalign}}\\[-7ex]
+        & & 
+            {\begin{flalign}
+                \sum_{a \in A} x_{gta} = 1 \qquad \forall \ g \in G, \ t \in T.
+                && \label{eq:onemovieatatime}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                x_{gt\emptyset} \leq x_{g,t+1,\emptyset} \qquad \forall \ g \in G, \ t = 1 \hdots T_{max} - 1.
+                && \label{eq:emptymovieprecedence}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                x_{gtm} + x_{g,t+1,m}  \leq 1 \qquad \forall \ g \in G, \ m \in M, \ t = 1 \hdots T_{max} - 1.
+                && \label{eq:notwoequalconsecutive}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \sum_{s = t}^{t + |M| - 1} x_{gsm}  \leq 2 \qquad \forall \ g \in G, \ m \in M, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:nothreeequalinsequence}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \sum_{s = t}^{t + |M| - 1} x_{gs*}  \leq 1 \qquad \forall \ g \in G, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:notwowcinsequence}
+            \end{flalign}}\\[-6ex]
+        & & 
+            {\begin{flalign}
+                \sum_{t \in T} x_{gt*}  \leq 2 \qquad \forall \ g \in G.
+                && \label{eq:twowcperteam}
+            \end{flalign}}\\[-6ex]
+        & & 
+            {\begin{flalign}
+                 \delta_{pgt} \leq x_{gk\omega_{pk}} \qquad \forall \ g \in G, \ p \in P, \ t = 1 \hdots T_{max} - |M| + 1, \ k = p \hdots p + |M| - 1.
+                && \label{eq:permfoundinpos}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                 \gamma_{pg} \geq \delta_{pgt} \qquad \forall \ g \in G, \ p \in P, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:permfoundinteamlb}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                 \gamma_{pg} \leq \delta_{pgt} + \lambda_{pgt} \qquad \forall \ g \in G, \ p \in P, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:permfoundinteamup}
+            \end{flalign}}\\[-6ex]
+        & & 
+            {\begin{flalign}
+                 \sum_{t = 1}^{T_{max} - |M| + 1} \lambda_{pgt} = T_{max} - |M| \qquad \forall \ g \in G, \ p \in P.
+                && \label{eq:definitionlambda}
+            \end{flalign}}\\[-6ex]
+        & & 
+            {\begin{flalign}
+                \sum_{g \in G} \gamma_{pg} \geq 1 \qquad \forall \ p \in P \ \backslash \ P_{\text{all}}.
+                && \label{eq:permfound}
+            \end{flalign}}\\[-7ex]
+        & & 
+            {\begin{flalign}
+                \gamma_{pg} = 1 \qquad \forall \ p \in P_{\text{all}}, \ g \in G.
+                && \label{eq:permfoundspecial}
+            \end{flalign}}\\[-7ex]
+        & & 
+            {\begin{flalign}
+                x_{gta} \in \{0, 1\} \qquad \forall \ g \in G, \ t \in T, \ a \in A.
+                && \label{eq:xbounds}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \delta_{pgt} \in \{0, 1\} \qquad \forall \ p \in P, \ g \in G, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:deltabounds}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \lambda_{pgt} \in \{0, 1\} \qquad \forall \ p \in P, \ g \in G, \ t = 1 \hdots T_{max} - |M| + 1.
+                && \label{eq:deltabounds}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \gamma_{pg} \in \{0, 1\} \qquad \forall \ p \in P, \ g \in G.
+                && \label{eq:deltabounds}
+            \end{flalign}}\\[-8ex]
+        & & 
+            {\begin{flalign}
+                \ell \in \mathbb{N}.
+                && \label{eq:deltabounds}
+            \end{flalign}}\\[-8ex]
+    \end{longtable}
+\end{center}
+
+
+\end{document}
