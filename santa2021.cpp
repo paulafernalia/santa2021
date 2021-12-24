@@ -59,6 +59,7 @@ main(int argc,
         &model);
 
     // 5) No more than 1 wildcard per subsequence
+    add_constr_max_wildcard_sequence(nTeams, nPos, nMovies, &x, &model);
 
     // 6) Define constraint num wildcards per team
     add_constr_max_wildcards(nTeams, nPos, nValues, nWildcards, &x,
@@ -115,6 +116,32 @@ main(int argc,
 
     delete env;
     return 0;
+}
+
+
+void
+add_constr_max_wildcard_sequence(
+    int nTeams,
+    int nPos,
+    int nMovies,
+    GRBVar3D* px,
+    GRBModel* pmodel) {
+
+    // For each team and position
+    for (int g = 0; g < nTeams; g++) {
+        for (int t = 0; t < nPos - nMovies; t++) {
+            // Create constraint name
+            ostringstream cname;
+            cname << "wildcardsequence(g" << g << ",t" << t << ")";
+
+            GRBLinExpr sum = 0;
+            for (int m = 0; m < nMovies; m++)
+                sum += px->at(g)[t + m][1];
+
+            // Add constraint
+            pmodel->addConstr(sum <= 1, cname.str());
+        }
+    }
 }
 
 

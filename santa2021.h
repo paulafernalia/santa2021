@@ -182,6 +182,12 @@ add_constr_team_symmetry(
 
 
 void
+add_constr_max_wildcard_sequence(
+    int nTeams,
+    int nPos,
+    int nMovies,
+    GRBVar3D* px,
+    GRBModel* pmodel);
 add_constr_permu(
     int nTeams,
     const intvec2D& permus,
