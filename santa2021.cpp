@@ -771,3 +771,33 @@ generate_all_permus(const intvec& values) {
 
     return permus;
 }
+
+
+intvec3D
+get_all_permus_by_letter(
+    const intvec2D& permus) {
+
+    // Get all unique letters from the first permutation
+    intvec unique = permus[0];
+
+    // Initialise vector to store result
+    intvec3D permu_groups(unique.size(), intvec2D());
+
+    for (int m = 2; m < unique.size() + 2; m++) {
+        permu_groups[m - 2] = intvec2D(unique.size(), intvec());
+
+        for (int t = 0; t < unique.size(); t++) {
+            permu_groups[m - 2][t].reserve(unique.size());
+        }
+    }
+
+    // For each permutation, store where appropriate
+    for (int p = 0; p < permus.size(); p++) {
+        for (int t = 0; t < unique.size(); t++) {
+            int m = permus[p][t];
+            permu_groups[m - 2][t].push_back(p);
+        }
+    }
+
+    return permu_groups;
+}

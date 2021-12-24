@@ -29,6 +29,9 @@ using std::setw;
 using std::setfill;
 
 
+intvec3D
+get_all_permus_by_letter(
+    const intvec2D& permus);
 void
 add_constr_one_movie_per_pos(
     int nTeams,
