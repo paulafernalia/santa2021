@@ -13,6 +13,10 @@
 #define GRBVar3D vector<vector<vector<GRBVar>>>
 #define GRBVar2D vector<vector<GRBVar>>
 #define GRBVar1D vector<GRBVar>
+#define intvec vector<int>
+#define intvec2D vector<intvec>
+#define intvec3D vector<intvec2D>
+#define intvec4D vector<intvec3D>
 
 using std::cout;
 using std::endl;
@@ -49,7 +53,7 @@ print_fractional(
     int nPos,
     int nValues,
     vector<char> names,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     const GRBVar3D& x,
     const GRBVar3D& delta,
     const GRBVar2D& gamma);
@@ -117,7 +121,7 @@ add_constr_permu_pos(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel);
@@ -128,7 +132,7 @@ add_constr_permu_team(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* pdelta,
     GRBVar2D* pgamma,
     GRBModel* pmodel);
@@ -139,7 +143,7 @@ add_constr_no_permu_if_zero(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel);
@@ -156,7 +160,7 @@ add_constr_team_symmetry(
 void
 add_constr_permu(
     int nTeams,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar2D* pgamma,
     GRBModel* pmodel);
 
@@ -203,7 +207,7 @@ factorial(int n) {
 }
 
 
-vector<vector<int>>
+intvec2D
 generate_all_permus(const vector<int>& values);
 
 

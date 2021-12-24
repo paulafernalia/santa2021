@@ -16,9 +16,11 @@ main(int argc,
     vector<char> names = generate_names(nMovies);
     int nPos = calculate_nPos(nMovies, nTeams);
     int nPermus = factorial(nMovies);
-    vector<int> movies = generate_all_movies(nMovies);
+    intvec movies = generate_all_movies(nMovies);
 
-    vector<vector<int>> permus = generate_all_permus(movies);
+    intvec2D permus = generate_all_permus(movies);
+    intvec3D permu_groups = get_all_permus_by_letter(permus);
+
 
     GRBEnv* env = 0;
 
@@ -189,7 +191,7 @@ print_fractional(
     int nPos,
     int nValues,
     vector<char> names,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     const GRBVar3D& x,
     const GRBVar3D& delta,
     const GRBVar2D& gamma) {
@@ -240,7 +242,7 @@ add_constr_no_permu_if_zero(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel) {
@@ -372,7 +374,7 @@ add_constr_permu_pos(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel) {
@@ -380,7 +382,7 @@ add_constr_permu_pos(
     // For each permu
     for (int p = 0; p < permus.size(); p++) {
         // Get this permutation
-        const vector<int>& permu = permus[p];
+        const intvec& permu = permus[p];
 
         // For each team
         for (int g = 0; g < nTeams; g++) {
@@ -410,7 +412,7 @@ add_constr_permu_team(
     int nTeams,
     int nPos,
     int nMovies,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar3D* pdelta,
     GRBVar2D* pgamma,
     GRBModel* pmodel) {
@@ -439,13 +441,13 @@ add_constr_permu_team(
 void
 add_constr_permu(
     int nTeams,
-    const vector<vector<int>>& permus,
+    const intvec2D& permus,
     GRBVar2D* pgamma,
     GRBModel* pmodel) {
 
     // For each permu
     for (int p = 0; p < permus.size(); p++) {
-        const vector<int>& permu = permus[p];
+        const intvec& permu = permus[p];
 
         // If the permu starts with A, B
         if (permu[0] == 2 && permu[1] == 3) {
@@ -692,9 +694,9 @@ generate_names(int nMovies) {
 }
 
 
-vector<int>
+intvec
 generate_all_movies(int nMovies) {
-    vector<int> movies(nMovies);
+    intvec movies(nMovies);
     for (int m = 0; m < nMovies; m++) {
         movies[m] = m + 2;
     }
@@ -703,19 +705,19 @@ generate_all_movies(int nMovies) {
 }
 
 
-vector<vector<int>>
-generate_all_permus(const vector<int>& values) {
+intvec2D
+generate_all_permus(const intvec& values) {
     int nValues = values.size();
     int nPermus = factorial(nValues);
 
     // Initialise vector to store permutations
-    vector<vector<int>> permus(nPermus, vector<int>(nValues));
+    intvec2D permus(nPermus, intvec(nValues));
 
     int count = 0;
 
     for (int m = 0; m < nValues; m++) {
         // Eliminate this value from the sequence
-        vector<int> subseq(nValues - 1);
+        intvec subseq(nValues - 1);
 
         int pos = 0;
         for (int s = 0; s < nValues; s++) {
@@ -724,11 +726,11 @@ generate_all_permus(const vector<int>& values) {
         }
 
         // Generate subpermutations in a recurrence
-        vector<vector<int>> inner_permus = generate_all_permus(subseq);
+        intvec2D inner_permus = generate_all_permus(subseq);
 
         // for each subpermutation, append value at the start
         for (int p = 0; p < inner_permus.size(); p++) {
-            vector<int> permu = inner_permus[p];
+            intvec permu = inner_permus[p];
             permu.push_back(values[m]);
 
             // std::reverse(permu.begin(), permu.end());
