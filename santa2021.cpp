@@ -89,13 +89,15 @@ main(int argc,
     // 13) Break team symmetry
     add_constr_team_symmetry(nTeams, nPos, &x, &model);
 
+    add_constr_two_movies_per_supersequence(nTeams, nPos, nMovies, &x, &model);
+
 
     // Solve problem
     model.write("model.lp");
 
     model.set(GRB_IntParam_Cuts, 2);
     model.set(GRB_IntParam_Presolve, 2);
-    model.set(GRB_IntParam_MIPFocus, 3);
+    model.set(GRB_IntParam_MIPFocus, 1);
 
     // Solve linear relaxation
     relax_all_vars(&model);
@@ -397,6 +399,38 @@ add_constr_start_left(
         }
     }
 }
+
+
+void
+add_constr_two_movies_per_supersequence(
+    int nTeams,
+    int nPos,
+    int nMovies,
+    GRBVar3D* px,
+    GRBModel* pmodel) {
+
+    // For each team, movie and starting position
+    for (int g = 0; g < nTeams; g++) {
+        for (int m = 2; m < nMovies + 2; m++) {
+            for (int t = 0; t < nPos - 2 * nMovies + 2; t++) {
+                // Initialise linear expression
+                GRBLinExpr sum = 0;
+
+                // For each intermediate position
+                for (int s = t; s < t + 2 * nMovies - 1; s++)
+                    sum += px->at(g)[s][m];
+
+                // Create constraint name
+                ostringstream cname;
+                cname << "max2supersequence(g" << g << ",m" << m << ",t" <<
+                    t << ")";
+
+                pmodel->addConstr(sum <= 2, cname.str());
+            }
+        }
+    }
+}
+
 
 
 void
