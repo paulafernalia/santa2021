@@ -598,7 +598,7 @@ add_vars_delta(
 
     // For each permu
     for (int p = 0; p < nPermus; p++) {
-        pdelta->at(p) = GRBVar2D(nTeams, GRBVar1D(nPos - nMovies));
+        pdelta->at(p) = GRBVar2D(nTeams, GRBVar1D(nPos - nMovies + 1));
 
         // For each team
         for (int g = 0; g < nTeams; g++) {
