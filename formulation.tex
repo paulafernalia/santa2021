@@ -92,6 +92,11 @@ Decision variables:
                 \sum_{a \in A} x_{gta} = 1 \qquad \forall \ g \in G, \ t \in T.
                 && \label{eq:onemovieatatime}
             \end{flalign}}\\[-8ex]
+        & 
+            {\begin{flalign}
+                x_{gt\emptyset} \leq x_{g,t+1,\emptyset} \qquad \forall \ g \in G, \ t = 1 \hdots T_{max} - 1.
+                && \label{eq:emptymovieprecedence}
+            \end{flalign}}\\[-8ex]
         % & & 
             % {\begin{flalign}
             %     \sum_{s = t}^{t + |M| - 1} x_{gsm}  \leq 2 \qquad \forall \ g \in G, \ m \in M, \ t = 1 \hdots T_{max} - |M| + 1.
@@ -142,11 +147,6 @@ Decision variables:
                 \gamma_{pg} = 1 \qquad \forall \ p \in P_{\text{all}}, \ g \in G.
                 && \label{eq:permfoundspecial}
             \end{flalign}}\\[-7ex]
-        & 
-            {\begin{flalign}
-                x_{gt\emptyset} \leq x_{g,t+1,\emptyset} \qquad \forall \ g \in G, \ t = 1 \hdots T_{max} - 1.
-                && \label{eq:emptymovieprecedence}
-            \end{flalign}}\\[-8ex]
         & 
             {\begin{flalign}
                 x_{gtm} + x_{g,t+1,m}  \leq 1 \qquad \forall \ g \in G, \ m \in M, \ t = 1 \hdots T_{max} - 1.
