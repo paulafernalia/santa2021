@@ -643,8 +643,10 @@ add_vars_x(
             }
         }
 
+        // Add restrictions on empty movies and wilcards
         for (int t = 0; t < nValues - 2; t++) {
             px->at(g)[t][0].set(GRB_DoubleAttr_UB, 0);
+            px->at(g)[t][1].set(GRB_DoubleAttr_UB, 0);
         }
     }
 }
