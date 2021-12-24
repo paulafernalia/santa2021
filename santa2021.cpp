@@ -659,7 +659,7 @@ add_vars_length(
     GRBVar1D* pteamlength,
     GRBModel* pmodel) {
 
-    *pmaxlength = pmodel->addVar(0, nPos + 1, 1, GRB_CONTINUOUS, "ml");
+    *pmaxlength = pmodel->addVar(0, nPos + 1, 1000, GRB_CONTINUOUS, "ml");
     *pteamlength = vector<GRBVar>(nTeams);
 
     for (int g = 0; g < nTeams; g++) {
@@ -667,7 +667,7 @@ add_vars_length(
         ostringstream vname;
         vname << "teamlength(g" << g << ")";
 
-        pteamlength->at(g) = pmodel->addVar(0, nPos + 1, 0, GRB_CONTINUOUS,
+        pteamlength->at(g) = pmodel->addVar(0, nPos + 1, 1, GRB_CONTINUOUS,
             vname.str());
     }
 }
