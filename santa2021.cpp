@@ -95,19 +95,50 @@ main(int argc,
     model.set(GRB_IntParam_Cuts, 2);
     model.set(GRB_IntParam_Presolve, 2);
     model.set(GRB_IntParam_MIPFocus, 3);
+
+    // Solve linear relaxation
+    relax_all_vars(&model);
+    model.optimize();
+    if (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL)
+        print_fractional(nTeams, nPos, nValues, names, permus, x, delta, gamma);
+
+    // Solve MIP
+    make_all_vars_integer(&model);
     model.optimize();
 
-    // Evaluate result
+    // Evaluate MIP result
     int status = model.get(GRB_IntAttr_Status);
-    if (status == GRB_INFEASIBLE) {
+    if (status == GRB_INFEASIBLE)
         print_infeasibility(&model);
-    } else if (status == GRB_OPTIMAL) {
+    else if (status == GRB_OPTIMAL)
         print_solution(nTeams, nPos, nValues, names, x);
-        print_fractional(nTeams, nPos, nValues, names, permus, x, delta, gamma);
-    }
 
     delete env;
     return 0;
+}
+
+
+void
+relax_all_vars(
+    GRBModel* pmodel) {
+
+    int numVars = pmodel->get(GRB_IntAttr_NumVars);
+    GRBVar* vars = pmodel->getVars();
+
+    for (int v = 0; v < numVars; v++)
+        vars[v].set(GRB_CharAttr_VType, GRB_CONTINUOUS);
+}
+
+
+void
+make_all_vars_integer(
+    GRBModel* pmodel) {
+
+    int numVars = pmodel->get(GRB_IntAttr_NumVars);
+    GRBVar* vars = pmodel->getVars();
+
+    for (int v = 0; v < numVars; v++)
+        vars[v].set(GRB_CharAttr_VType, GRB_INTEGER);
 }
 
 

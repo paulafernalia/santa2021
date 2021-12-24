@@ -39,6 +39,16 @@ add_constr_one_movie_per_pos(
 
 
 void
+relax_all_vars(
+    GRBModel* pmodel);
+
+
+void
+make_all_vars_integer(
+    GRBModel* pmodel);
+
+
+void
 print_solution(
     int nTeams,
     int nPos,
