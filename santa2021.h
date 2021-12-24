@@ -32,6 +32,16 @@ using std::setfill;
 intvec3D
 get_all_permus_by_letter(
     const intvec2D& permus);
+
+
+void
+add_constr_team_symmetry(
+    int nPermus,
+    const intvec2D& permus,
+    GRBVar2D* pgamma,
+    GRBModel* pmodel);
+
+
 void
 add_constr_one_movie_per_pos(
     int nTeams,

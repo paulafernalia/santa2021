@@ -85,8 +85,8 @@ main(int argc,
     add_constr_no_permu_if_zero(nTeams, nPos, nMovies, permus, &x, &delta,
         &model);
 
-    // Break team symmetry
-    add_constr_team_symmetry(nTeams, nPos, &x, &model);
+    // 13) Break team symmetry
+    add_constr_team_symmetry(nPermus, permus, &gamma, &model);
 
 
     // Solve problem
@@ -303,20 +303,19 @@ add_constr_no_permu_if_zero(
 
 void
 add_constr_team_symmetry(
-    int nTeams,
-    int nPos,
-    GRBVar3D* px,
+    int nPermus,
+    const intvec2D& permus,
+    GRBVar2D* pgamma,
     GRBModel* pmodel) {
 
-    for (int t = 0; t < nPos; t++) {
-        for (int g = 0; g < nTeams - 1; g++) {
-            // Create constraint name
-            ostringstream cname;
-            cname << "teamsymm(t" << t << ",g" << g << ")";
+    for (int p = 0; p < nPermus; p++) {
+        // Create constraint name
+        ostringstream cname;
+        cname << "symm";
 
-            // Add constraint
-            pmodel->addConstr(
-                px->at(g)[t][0] <= px->at(g + 1)[t][0], cname.str());
+        if (permus[p][0] != 2 && permus[p][0] != 3) {
+            pmodel->addConstr(pgamma->at(p)[0] == 1, cname.str());
+            break;
         }
     }
 }
