@@ -54,31 +54,31 @@ main(int argc,
     // 3) Define constraint one movie in each position
     add_constr_one_movie_per_pos(nTeams, nPos, nValues, x, &model);
 
-    // 6) No more than 1 wildcard per subsequence
+    // 4) Start x from left
+    add_constr_start_left(nTeams, nPos, nValues, nWildcards, &x,
+        &model);
 
-    // 7) Define constraint num wildcards per team
+    // 5) No more than 1 wildcard per subsequence
+
+    // 6) Define constraint num wildcards per team
     add_constr_max_wildcards(nTeams, nPos, nValues, nWildcards, &x,
         &model);
 
-    // 8) Find each permutation in each position
+    // 7) Find each permutation in each position
     add_constr_permu_pos(nTeams, nPos, nMovies, permus, &x, &delta,
         &model);
 
-    // 9) Find each permutation in each team
+    // 8) Find each permutation in each team
     add_constr_permu_team(nTeams, nPos, nMovies, permus, &delta, &gamma,
         &model);
 
-    // 10) 11) Find each permutation anywhere (either globally or within team)
+    // 9) 10) Find each permutation anywhere (either globally or within team)
     add_constr_permu(nTeams, permus, &gamma, &model);
 
 
     // Define valid inequalities
 
-    // 4) Start x from left
-    add_constr_start_left(nTeams, nPos, nValues, nWildcards, &x,
-        &model);
-
-    // 5) No two identical consecutive movies (except when no movie)
+    // 11) No two identical consecutive movies (except when no movie)
     add_constr_consecutive_movies(nTeams, nPos, nValues, &x, &model);
 
     // 12) If a zero is found, no sequence covering it counts as a permutation
