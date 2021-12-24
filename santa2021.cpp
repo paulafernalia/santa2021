@@ -65,8 +65,8 @@ main(int argc,
         &model);
 
     // 7) Find each permutation in each position
-    add_constr_permu_pos(nTeams, nPos, nMovies, permus, &x, &delta,
-        &model);
+    add_constr_permu_pos(nTeams, nPos, nMovies, permus, permu_groups, &x,
+        &delta, &model);
 
     // 8) Find each permutation in each team
     add_constr_permu_team(nTeams, nPos, nMovies, permus, &delta, &gamma,
@@ -405,30 +405,34 @@ add_constr_permu_pos(
     int nPos,
     int nMovies,
     const intvec2D& permus,
+    const intvec3D& permu_groups,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel) {
 
-    // For each permu
-    for (int p = 0; p < permus.size(); p++) {
-        // Get this permutation
-        const intvec& permu = permus[p];
-
-        // For each team
-        for (int g = 0; g < nTeams; g++) {
-            // For each starting position
-            for (int t = 0; t <= nPos - nMovies; t++) {
+    // For each team
+    for (int g = 0; g < nTeams; g++) {
+        // For each starting position
+        for (int t = 0; t <= nPos - nMovies; t++) {
+            // For each relative intermediate position
+            for (int s = 0; s < nMovies; s++) {
                 // For each movie in the permutation
-                for (int m = 0; m < permu.size(); m++) {
-                    // Create constraint name
+                for (int m = 2; m < nMovies + 2; m++) {
+
+                    // Define constraint name
                     ostringstream cname;
-                    cname << "permutation_position(p" << p << ",g" << g <<
-                        ",t" << t << ",m" << m << ")";
+                    cname << "permutations_position(g" << g << ",m" << m <<
+                        ",t" << t << ",s" << s << ")";
+
+                    // Initialise LHS
+                    GRBLinExpr sum = 0;
+
+                    // Sum all permutations starting in t with m in position s
+                    for (const auto& p : permu_groups[m - 2][s])
+                        sum += pdelta->at(p)[g][t];
 
                     // Add constraint
-                    pmodel->addConstr(
-                        pdelta->at(p)[g][t] <=
-                        px->at(g)[t + m][permu[m]],
+                    pmodel->addConstr(sum <= px->at(g)[t + s][m],
                         cname.str());
                 }
             }

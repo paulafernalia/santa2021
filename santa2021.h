@@ -145,6 +145,7 @@ add_constr_permu_pos(
     int nPos,
     int nMovies,
     const intvec2D& permus,
+    const intvec3D& permu_groups,
     GRBVar3D* px,
     GRBVar3D* pdelta,
     GRBModel* pmodel);
