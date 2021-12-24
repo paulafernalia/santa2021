@@ -27,24 +27,50 @@ main(int argc,
     GRBModel model = GRBModel(*env);
     model.set(GRB_StringAttr_ModelName, "xmasmovies");
 
+
     // Define variables
     GRBVar3D x;
     add_vars_x(nTeams, nPos, nValues, names, &x, &model);
 
     GRBVar3D delta;
-    add_vars_permu_pos(nTeams, nPos, nMovies, nPermus, &delta, &model);
+    add_vars_delta(nTeams, nPos, nMovies, nPermus, &delta, &model);
 
     GRBVar2D gamma;
-    add_vars_permu_team(nTeams, nPermus, &gamma, &model);
+    add_vars_gamma(nTeams, nPermus, &gamma, &model);
 
-    GRBVar length;
-    add_vars_last_movie(nPos, &length, &model);
+    GRBVar maxlength;
+    GRBVar1D teamlength;
+    add_vars_length(nPos, nTeams, &maxlength, &teamlength, &model);
+
+
+    // Define constraints
 
     // 2) Define duration of the longest schedule
-    add_constr_last_movie(nTeams, nPos, nValues, &x, &length, &model);
+    add_constr_last_movie(nTeams, nPos, nValues, &x, &maxlength, &teamlength,
+        &model);
 
     // 3) Define constraint one movie in each position
     add_constr_one_movie_per_pos(nTeams, nPos, nValues, x, &model);
+
+    // 6) No more than 1 wildcard per subsequence
+
+    // 7) Define constraint num wildcards per team
+    add_constr_max_wildcards(nTeams, nPos, nValues, nWildcards, &x,
+        &model);
+
+    // 8) Find each permutation in each position
+    add_constr_permu_pos(nTeams, nPos, nMovies, permus, &x, &delta,
+        &model);
+
+    // 9) Find each permutation in each team
+    add_constr_permu_team(nTeams, nPos, nMovies, permus, &delta, &gamma,
+        &model);
+
+    // 10) 11) Find each permutation anywhere (either globally or within team)
+    add_constr_permu(nTeams, permus, &gamma, &model);
+
+
+    // Define valid inequalities
 
     // 4) Start x from left
     add_constr_start_left(nTeams, nPos, nValues, nWildcards, &x,
@@ -53,20 +79,12 @@ main(int argc,
     // 5) No two identical consecutive movies (except when no movie)
     add_constr_consecutive_movies(nTeams, nPos, nValues, &x, &model);
 
-    // 6) Define constraint num wildcards per team
-    add_constr_max_wildcards(nTeams, nPos, nValues, nWildcards, &x,
+    // 12) If a zero is found, no sequence covering it counts as a permutation
+    add_constr_no_permu_if_zero(nTeams, nPos, nMovies, permus, &x, &delta,
         &model);
 
-    // 4) Find each permutation in each position
-    add_constr_permu_pos(nTeams, nPos, nMovies, permus, &x, &delta,
-        &model);
-
-    // 5) Find each permutation in each team
-    add_constr_permu_team(nTeams, nPos, nMovies, permus, &delta, &gamma,
-        &model);
-
-    // 6) Find each permutation anywhere
-    add_constr_permu(nTeams, permus, &gamma, &model);
+    // Break team symmetry
+    add_constr_team_symmetry(nTeams, nPos, &x, &model);
 
 
     // Solve problem
@@ -74,19 +92,21 @@ main(int argc,
 
     model.set(GRB_IntParam_Cuts, 2);
     model.set(GRB_IntParam_Presolve, 2);
+    model.set(GRB_IntParam_MIPFocus, 3);
     model.optimize();
 
     // Evaluate result
     int status = model.get(GRB_IntAttr_Status);
-    if (status == GRB_INFEASIBLE)
+    if (status == GRB_INFEASIBLE) {
         print_infeasibility(&model);
-    else if (status == GRB_OPTIMAL)
+    } else if (status == GRB_OPTIMAL) {
         print_solution(nTeams, nPos, nValues, names, x);
+        print_fractional(nTeams, nPos, nValues, names, permus, x, delta, gamma);
+    }
 
     delete env;
     return 0;
 }
-
 
 
 void
@@ -164,6 +184,112 @@ print_solution(
 
 
 void
+print_fractional(
+    int nTeams,
+    int nPos,
+    int nValues,
+    vector<char> names,
+    const vector<vector<int>>& permus,
+    const GRBVar3D& x,
+    const GRBVar3D& delta,
+    const GRBVar2D& gamma) {
+
+    cout << "\n\nX\n=============" << endl;
+
+    double vsol;
+    for (int g = 0; g < nTeams; g++) {
+        cout << "\nTEAM " << g << ":\n--" << endl;
+        for (int v = 0; v < nValues; v++) {
+            cout << names[v] << ": ";
+
+            for (int t = 0; t < nPos; t++) {
+                // Get solution
+                vsol = x[g][t][v].get(GRB_DoubleAttr_X);
+                cout << setfill(' ') << setw(5) << setprecision(2) << vsol <<
+                    " ";
+            }
+            cout << endl;
+        }
+    }
+
+
+    cout << "\ndelta\n=============" << endl;
+    for (int g = 0; g < nTeams; g++) {
+        cout << "TEAM " << g << ":\n--" << endl;
+        for (int p = 0; p < permus.size(); p++) {
+            // cout << "PERMU" << p << ": ";
+            for (const auto& letter : permus[p])
+                cout << names[letter];
+            cout << ": ";
+
+            for (int t = 0; t <= nPos - nValues + 2; t++) {
+                // Get solution
+                vsol = delta[p][g][t].get(GRB_DoubleAttr_X);
+                cout << setfill(' ') << setw(5) << setprecision(2) << vsol <<
+                    " ";
+            }
+            cout << endl;
+        }
+        cout << endl;
+    }
+}
+
+
+void
+add_constr_no_permu_if_zero(
+    int nTeams,
+    int nPos,
+    int nMovies,
+    const vector<vector<int>>& permus,
+    GRBVar3D* px,
+    GRBVar3D* pdelta,
+    GRBModel* pmodel) {
+
+    for (int g = 0; g < nTeams; g++) {
+        for (int t = 0; t <= nPos - nMovies; t++) {
+            for (int s = 0; s < t + nMovies - 1; s++) {
+                GRBLinExpr sum;
+
+                for (int p = 0; p < permus.size(); p++)
+                    sum += pdelta->at(p)[g][t];
+
+                sum += px->at(g)[s][0];
+
+                // Create constraint name
+                ostringstream cname;
+                cname << "nopermuifzero(g" << g << ",t" << t << ",s" << s <<
+                    ")";
+
+                // Add constraint
+                pmodel->addConstr(sum <= 1, cname.str());
+            }
+        }
+    }
+}
+
+
+void
+add_constr_team_symmetry(
+    int nTeams,
+    int nPos,
+    GRBVar3D* px,
+    GRBModel* pmodel) {
+
+    for (int t = 0; t < nPos; t++) {
+        for (int g = 0; g < nTeams - 1; g++) {
+            // Create constraint name
+            ostringstream cname;
+            cname << "teamsymm(t" << t << ",g" << g << ")";
+
+            // Add constraint
+            pmodel->addConstr(
+                px->at(g)[t][0] <= px->at(g + 1)[t][0], cname.str());
+        }
+    }
+}
+
+
+void
 add_constr_max_wildcards(
     int nTeams,
     int nPos,
@@ -224,19 +350,17 @@ add_constr_consecutive_movies(
 
     for (int g = 0; g < nTeams; g++) {
         for (int t = 0; t < nPos - 1; t++) {
-            for (int v = 0; v < nValues; v++) {
-                if (v != 0 && v != 1) {
-                    // Create constraint name
-                    ostringstream cname;
-                    cname << "noconsecutive(g" << g << ",t" << t <<
-                        ",m" << v << ")";
+            for (int v = 2; v < nValues; v++) {
+                // Create constraint name
+                ostringstream cname;
+                cname << "noconsecutive(g" << g << ",t" << t <<
+                    ",m" << v << ")";
 
-                    // Add constraint
-                    pmodel->addConstr(
-                        px->at(g)[t][v] +
-                        px->at(g)[t + 1][v] <= 1,
-                        cname.str());
-                }
+                // Add constraint
+                pmodel->addConstr(
+                    px->at(g)[t][v] +
+                    px->at(g)[t + 1][v] <= 1,
+                    cname.str());
             }
         }
     }
@@ -261,7 +385,7 @@ add_constr_permu_pos(
         // For each team
         for (int g = 0; g < nTeams; g++) {
             // For each starting position
-            for (int t = 0; t < nPos - nMovies; t++) {
+            for (int t = 0; t <= nPos - nMovies; t++) {
                 // For each movie in the permutation
                 for (int m = 0; m < permu.size(); m++) {
                     // Create constraint name
@@ -298,9 +422,8 @@ add_constr_permu_team(
             GRBLinExpr expr = 0;
 
             // Add all possible positions
-            for (int t = 0; t < nPos - nMovies; t++) {
-                expr += 1 * pdelta->at(p)[g][t];
-            }
+            for (int t = 0; t <= nPos - nMovies; t++)
+                expr += pdelta->at(p)[g][t];
 
             // Create constraint name
             ostringstream cname;
@@ -333,7 +456,7 @@ add_constr_permu(
                 cname << "special_permutation(p" << p << ",g" << g << ")";
 
                 // Add constraint
-                pmodel->addConstr(pgamma->at(p)[g] >= 1, cname.str());
+                pmodel->addConstr(pgamma->at(p)[g] == 1, cname.str());
             }
 
         } else {
@@ -349,7 +472,7 @@ add_constr_permu(
             cname << "regular_permutation(p" << p << ")";
 
             // Add constraint
-            pmodel->addConstr(expr == 1, cname.str());
+            pmodel->addConstr(expr >= 1, cname.str());
         }
     }
 }
@@ -360,7 +483,8 @@ add_constr_last_movie(
     int nPos,
     int nValues,
     GRBVar3D* px,
-    GRBVar* pduration,
+    GRBVar* pmaxlength,
+    GRBVar1D* pteamlength,
     GRBModel* pmodel) {
 
     // For each team
@@ -370,18 +494,24 @@ add_constr_last_movie(
         // For each starting position
         for (int t = 0; t < nPos; t++) {
             // For each movie not empty
-            for (int v = 0; v < nValues; v++) {
-                if (v != 0)
-                    sum += px->at(g)[t][v];
+            for (int v = 1; v < nValues; v++) {
+                sum += px->at(g)[t][v];
             }
         }
 
         // Create constraint name
-        ostringstream cname;
-        cname << "length(g" << g << ")";
+        ostringstream cname_m;
+        cname_m << "maxlength(g" << g << ")";
 
-        // Add constraint
-        pmodel->addConstr(*pduration >= sum, cname.str());
+        // Add constraint (max)
+        pmodel->addConstr(*pmaxlength >= sum, cname_m.str());
+
+        // Create constraint name
+        ostringstream cname_t;
+        cname_t << "teamlength(g" << g << ")";
+
+        // Add constraint (max)
+        pmodel->addConstr(pteamlength->at(g) == sum, cname_t.str());
     }
 }
 
@@ -411,16 +541,20 @@ add_vars_x(
                 vname << names[m] << "(g" << g << ",t" << t << ")";
 
                 // Add variable
-                px->at(g)[t][m] = pmodel->addVar(0, 1, 0, GRB_BINARY,
+                px->at(g)[t][m] = pmodel->addVar(0, 1, 0, GRB_CONTINUOUS,
                     vname.str());
             }
+        }
+
+        for (int t = 0; t < nValues - 2; t++) {
+            px->at(g)[t][0].set(GRB_DoubleAttr_UB, 0);
         }
     }
 }
 
 
 void
-add_vars_permu_pos(
+add_vars_delta(
     int nTeams,
     int nPos,
     int nMovies,
@@ -437,14 +571,16 @@ add_vars_permu_pos(
         // For each team
         for (int g = 0; g < nTeams; g++) {
             // For each starting position
-            for (int t = 0; t < nPos - nMovies; t++) {
+            for (int t = 0; t <= nPos - nMovies; t++) {
                 // Create variable name
                 ostringstream vname;
                 vname << "delta(p" << p << ",g" << g << ",t" << t << ")";
 
                 // Add variable
-                pdelta->at(p)[g][t] = pmodel->addVar(0, 1, 0, GRB_BINARY,
+                pdelta->at(p)[g][t] = pmodel->addVar(0, 1, 0, GRB_CONTINUOUS,
                     vname.str());
+
+                pdelta->at(p)[g][t].set(GRB_IntAttr_BranchPriority, 10);
             }
         }
     }
@@ -452,7 +588,7 @@ add_vars_permu_pos(
 
 
 void
-add_vars_permu_team(
+add_vars_gamma(
     int nTeams,
     int nPermus,
     GRBVar2D* pgamma,
@@ -469,8 +605,10 @@ add_vars_permu_team(
             vname << "gamma(p" << p << ",g" << g << ")";
 
             // Add variable
-            pgamma->at(p)[g] = pmodel->addVar(0, 1, 0, GRB_BINARY,
+            pgamma->at(p)[g] = pmodel->addVar(0, 1, 0, GRB_CONTINUOUS,
                 vname.str());
+
+            pgamma->at(p)[g].set(GRB_IntAttr_BranchPriority, 100);
         }
     }
 }
@@ -478,12 +616,24 @@ add_vars_permu_team(
 
 
 void
-add_vars_last_movie(
+add_vars_length(
     int nPos,
-    GRBVar* pduration,
+    int nTeams,
+    GRBVar* pmaxlength,
+    GRBVar1D* pteamlength,
     GRBModel* pmodel) {
 
-    *pduration = pmodel->addVar(0, nPos + 1, 1, GRB_CONTINUOUS, "l");
+    *pmaxlength = pmodel->addVar(0, nPos + 1, 1, GRB_CONTINUOUS, "ml");
+    *pteamlength = vector<GRBVar>(nTeams);
+
+    for (int g = 0; g < nTeams; g++) {
+        // Create variable name
+        ostringstream vname;
+        vname << "teamlength(g" << g << ")";
+
+        pteamlength->at(g) = pmodel->addVar(0, nPos + 1, 0, GRB_CONTINUOUS,
+            vname.str());
+    }
 }
 
 
@@ -581,6 +731,7 @@ generate_all_permus(const vector<int>& values) {
             vector<int> permu = inner_permus[p];
             permu.push_back(values[m]);
 
+            // std::reverse(permu.begin(), permu.end());
             permus[count++] = permu;
         }
     }

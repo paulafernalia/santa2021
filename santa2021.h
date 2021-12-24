@@ -1,9 +1,13 @@
 // Copyright 2021
 
+#ifndef SANTA2021_H_
+#define SANTA2021_H_
+
 #include <iosfwd>
 #include <string>
 #include <vector>
-#include "gurobi_c++.h"
+#include <iomanip>
+#include "./gurobi_c++.h"
 
 #define EPS 1e-5
 #define GRBVar3D vector<vector<vector<GRBVar>>>
@@ -16,6 +20,9 @@ using std::string;
 using std::ostringstream;
 using std::vector;
 using std::cerr;
+using std::setprecision;
+using std::setw;
+using std::setfill;
 
 
 void
@@ -37,6 +44,18 @@ print_solution(
 
 
 void
+print_fractional(
+    int nTeams,
+    int nPos,
+    int nValues,
+    vector<char> names,
+    const vector<vector<int>>& permus,
+    const GRBVar3D& x,
+    const GRBVar3D& delta,
+    const GRBVar2D& gamma);
+
+
+void
 add_vars_x(
     int nTeams,
     int nPos,
@@ -47,14 +66,16 @@ add_vars_x(
 
 
 void
-add_vars_last_movie(
+add_vars_length(
     int nPos,
-    GRBVar* plength,
+    int nTeams,
+    GRBVar* pmaxlength,
+    GRBVar1D* pteamlength,
     GRBModel* pmodel);
 
 
 void
-add_vars_permu_pos(
+add_vars_delta(
     int nTeams,
     int nPos,
     int nMovies,
@@ -64,7 +85,7 @@ add_vars_permu_pos(
 
 
 void
-add_vars_permu_team(
+add_vars_gamma(
     int nTeams,
     int nPermus,
     GRBVar2D* pgamma,
@@ -114,6 +135,25 @@ add_constr_permu_team(
 
 
 void
+add_constr_no_permu_if_zero(
+    int nTeams,
+    int nPos,
+    int nMovies,
+    const vector<vector<int>>& permus,
+    GRBVar3D* px,
+    GRBVar3D* pdelta,
+    GRBModel* pmodel);
+
+
+void
+add_constr_team_symmetry(
+    int nTeams,
+    int nPos,
+    GRBVar3D* px,
+    GRBModel* pmodel);
+
+
+void
 add_constr_permu(
     int nTeams,
     const vector<vector<int>>& permus,
@@ -146,7 +186,8 @@ add_constr_last_movie(
     int nPos,
     int nValues,
     GRBVar3D* px,
-    GRBVar* plength,
+    GRBVar* pmaxlength,
+    GRBVar1D* pteamlength,
     GRBModel* pmodel);
 
 
@@ -172,3 +213,5 @@ generate_all_movies(int nMovies);
 
 void
 print_infeasibility(GRBModel* pmodel);
+
+#endif  // SANTA2021_H_
